@@ -20,5 +20,20 @@ class Book extends Model
     {
         return $query->where('title', 'LIKE', "%" . $title . "%");
     }
+
+    // Query Bulder for filtering by popularity. Popular books are those with the most reviews.
+    public function scopePopular(Builder $query): Builder
+    {
+        return $query->withCount('reviews')
+            ->orderByDesc('reviews_count');
+            //->limit(20);
+    }
     
+    // Query Builder for filtering by rating. Highest rated books are those with the highest average rating.
+    public function scopeHighestRated(Builder $query): Builder
+    {
+        return $query->withAvg('reviews','rating')
+            ->orderByDesc('reviews_avg_rating');
+            //->limit(20);
+    }
 }
