@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Review;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -9,6 +10,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class ReviewFactory extends Factory
 {
+    protected $model = Review::class; // Ensure this is set to your model
+
     /**
      * Define the model's default state.
      *
@@ -17,37 +20,37 @@ class ReviewFactory extends Factory
     public function definition(): array
     {
         return [
-            'book_id' => null, 
-            'review' => fake() -> paragraph(2),
-            'rating' => fake() -> numberBetween(1, 5),
-            'created_at' => fake() -> dateTimeBetween('-2 years', 'now'),
+            'book_id' => null, // This will be automatically handled by ->for(Book::class) in the seeder
+            'review' => $this->faker->paragraph(2), // Use $this->faker for consistency
+            'rating' => $this->faker->numberBetween(1, 5), // Default rating between 1 and 5
+            'created_at' => $this->faker->dateTimeBetween('-2 years', 'now'),
             'updated_at' => function (array $attributes) {
-                return $attributes['created_at']; // same as created_at
-            }, 
+                return $attributes['created_at']; // Use the same value as created_at
+            },
         ];
     }
 
-    // Define a state named "good"
+    /**
+     * Define the "good" state.
+     */
     public function good()
     {
-        return function (array $attributes) {
+        return $this->state(function (array $attributes) {
             return [
-                'rating' => fake() -> numberBetween(4, 5),
+                'rating' => $this->faker->numberBetween(4, 5),
             ];
-        };
+        });
     }
 
-    // Define a state named "bad"
+    /**
+     * Define the "bad" state.
+     */
     public function bad()
     {
-        return function (array $attributes) {
+        return $this->state(function (array $attributes) {
             return [
-                'rating' => fake() -> numberBetween(1, 3),
+                'rating' => $this->faker->numberBetween(1, 3),
             ];
-        };
+        });
     }
-
-
-    
 }
-

@@ -2,14 +2,15 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\HasFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Review extends Model
 {
     use HasFactory;
+
     public function book()
     {
-        return $this->belongsTo(Book::class); // a review belongs to a book
+        return $this->belongsTo(Book::class);
     }
 }
