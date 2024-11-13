@@ -3,15 +3,24 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Book;
 
 class BookController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $title = $request->input('title');
+
+        # If tihe title is not empty, filter the books by title.
+        $books = Book::when($title, function ($query, $title) {
+            return $query->title($title);
+        } ) ->get();
+
+        # turn the books into a collection of arrays
+        return view('books.index', ['books' => $books]);
     }
 
     /**
@@ -33,10 +42,17 @@ class BookController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Book $book)
     {
-        //
+        return view(
+            'books.show', 
+            ['book' => $book->load([
+                'reviews' => fn ($query) => $query->latest(),
+                ])
+            ]
+        );
     }
+    
 
     /**
      * Show the form for editing the specified resource.
