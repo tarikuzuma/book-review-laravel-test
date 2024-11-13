@@ -42,10 +42,17 @@ class BookController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Book $book)
     {
-        //
+        return view(
+            'books.show', 
+            ['book' => $book->load([
+                'reviews' => fn ($query) => $query->latest(),
+                ])
+            ]
+        );
     }
+    
 
     /**
      * Show the form for editing the specified resource.
