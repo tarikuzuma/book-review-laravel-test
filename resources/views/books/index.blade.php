@@ -3,8 +3,12 @@
 @section('content')
     <h1 class="mb-10 text-2xl">Books</h1>
 
-    <form>
-
+    <form method = "GET" action = "{{route ('books.index') }}" class = "mb-4 flex items-center gap-2">
+        <input type = "text" name = "title" placeholder ="Search by Title" value = "{{request('title')}}" class = "input h-10"/>
+        
+        <button type="submit" class="btn h-10">Search</button>
+        <a href = "{{route('books.index')}}" class = "btn h-10">Reset</a>
+       
     </form>
 
     <ul>
