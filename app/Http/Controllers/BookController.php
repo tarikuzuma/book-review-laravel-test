@@ -29,7 +29,6 @@ class BookController extends Controller
             default => $books->latest()->withAvgRating()->withReviewsCount()
         };
 
-        // Adding `appends` to ensure pagination retains query parameters
         $books = $books->paginate(10)->appends([
             'title' => $title,
             'filter' => $filter,
@@ -37,7 +36,7 @@ class BookController extends Controller
 
         return view('books.index', ['books' => $books]);
     }
-    
+
     /**
      * Show the form for creating a new resource.
      */

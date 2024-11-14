@@ -1,3 +1,7 @@
-<div>
-    <!-- If you do not have a consistent goal in life, you can not live it in a consistent way. - Marcus Aurelius -->
-</div>
+@if ($rating)
+  @for ($i = 1; $i <= 5; $i++)
+    {{ $i <= round($rating) ? '★' : '☆' }}
+  @endfor
+@else
+  No rating yet
+@endif
