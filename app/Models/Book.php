@@ -2,88 +2,56 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 
 class Book extends Model
 {
     use HasFactory;
 
-    // Define a one-to-many relationship between Book and Review.
     public function reviews()
     {
         return $this->hasMany(Review::class);
     }
 
-    /**
-     * Scope a query to search books by title.
-     * Usage: \App\Models\Book::title('example')->get();
-     *
-     * @param Builder $query
-     * @param string $title
-     * @return Builder
-     */
     public function scopeTitle(Builder $query, string $title): Builder
     {
-        return $query->where('title', 'LIKE', "%" . $title . "%");
+        return $query->where('title', 'LIKE', '%' . $title . '%');
     }
 
-    /**
-     * Scope a query to filter popular books based on the number of reviews.
-     * Optionally filter by a date range using 'created_at' on reviews.
-     *
-     * @param Builder $query
-     * @param mixed|null $from Start date for filtering (optional)
-     * @param mixed|null $to End date for filtering (optional)
-     * @return Builder
-     */
-    public function scopePopular(Builder $query, $from = null, $to = null): Builder
+    public function scopeWithReviewsCount(Builder $query, $from = null, $to = null): Builder|QueryBuilder
     {
-        return $query->withCount(['reviews' => function (Builder $query) use ($from, $to) {
-            $this->dateRangeFilter($query, $from, $to);
-        }])
-        ->orderByDesc('reviews_count');
+        return $query->withCount([
+            'reviews' => fn(Builder $q) => $this->dateRangeFilter($q, $from, $to)
+        ]);
     }
 
-    /**
-     * Scope a query to filter books by the highest average rating.
-     * Optionally filter by a date range using 'created_at' on reviews.
-     *
-     * @param Builder $query
-     * @param mixed|null $from Start date for filtering (optional)
-     * @param mixed|null $to End date for filtering (optional)
-     * @return Builder
-     */
-    public function scopeHighestRated(Builder $query, $from = null, $to = null): Builder
+    public function scopeWithAvgRating(Builder $query, $from = null, $to = null): Builder|QueryBuilder
     {
-        return $query->withAvg(['reviews' => function (Builder $query) use ($from, $to) {
-            $this->dateRangeFilter($query, $from, $to);
-        }], 'rating')
-        ->orderByDesc('reviews_avg_rating');
+        return $query->withAvg([
+            'reviews' => fn(Builder $q) => $this->dateRangeFilter($q, $from, $to)
+        ], 'rating');
     }
 
-    /**
-     * Scope a query to filter books by a minimum number of reviews.
-     * This can be used to exclude books with very few reviews.
-     *
-     * @param Builder $query
-     * @param int $minReviews Minimum number of reviews required
-     * @return Builder
-     */
-    public function scopeMinReviews(Builder $query, int $minReviews): Builder
+    public function scopePopular(Builder $query, $from = null, $to = null): Builder|QueryBuilder
     {
-        return $query->having('reviews_count', '>=', $minReviews);
+        return $query->withReviewsCount()
+            ->orderBy('reviews_count', 'desc');
     }
 
-    /**
-     * Filter a query by a date range based on 'created_at'.
-     *
-     * @param Builder $query
-     * @param mixed|null $from Start date for filtering (optional)
-     * @param mixed|null $to End date for filtering (optional)
-     * @return void
-     */
+    public function scopeHighestRated(Builder $query, $from = null, $to = null): Builder|QueryBuilder
+    {
+        return $query->withAvgRating()
+            ->orderBy('reviews_avg_rating', 'desc');
+    }
+
+    public function scopeMinReviews(Builder $query, int $minReviews): Builder|QueryBuilder
+    {
+        return $query->where('reviews_count', '>=', $minReviews);
+    }
+
     private function dateRangeFilter(Builder $query, $from = null, $to = null)
     {
         if ($from && !$to) {
@@ -93,5 +61,43 @@ class Book extends Model
         } elseif ($from && $to) {
             $query->whereBetween('created_at', [$from, $to]);
         }
+    }
+
+    public function scopePopularLastMonth(Builder $query): Builder|QueryBuilder
+    {
+        return $query->popular(now()->subMonth(), now())
+            ->highestRated(now()->subMonth(), now())
+            ->minReviews(2);
+    }
+
+    public function scopePopularLast6Months(Builder $query): Builder|QueryBuilder
+    {
+        return $query->popular(now()->subMonths(6), now())
+            ->highestRated(now()->subMonths(6), now())
+            ->minReviews(5);
+    }
+
+    public function scopeHighestRatedLastMonth(Builder $query): Builder|QueryBuilder
+    {
+        return $query->highestRated(now()->subMonth(), now())
+            ->popular(now()->subMonth(), now())
+            ->minReviews(2);
+    }
+
+    public function scopeHighestRatedLast6Months(Builder $query): Builder|QueryBuilder
+    {
+        return $query->highestRated(now()->subMonths(6), now())
+            ->popular(now()->subMonths(6), now())
+            ->minReviews(5);
+    }
+
+    protected static function booted()
+    {
+        static::updated(
+            fn(Book $book) => cache()->forget('book:' . $book->id)
+        );
+        static::deleted(
+            fn(Book $book) => cache()->forget('book:' . $book->id)
+        );
     }
 }
