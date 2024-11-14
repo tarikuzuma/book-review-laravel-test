@@ -60,4 +60,8 @@
             </div>
         @endforelse
     </ul>
+
+    <div class = "mt-10">
+        {{ $books->links() }}
+    </div>
 @endsection
