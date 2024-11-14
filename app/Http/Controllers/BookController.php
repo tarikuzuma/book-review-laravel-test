@@ -31,8 +31,12 @@ class BookController extends Controller
 
         $cacheKey = 'books.' . $filter . ':' . $title;
 
+        // $books = cache()->remember($cacheKey, 3600, function() use ($books) {
+        //     dd('cache miss');
+        //     return $books->get();
+        // });
+
         $books = cache()->remember($cacheKey, 3600, function() use ($books) {
-            dd('cache miss');
             return $books->get();
         });
 
@@ -61,13 +65,14 @@ class BookController extends Controller
      */
     public function show(Book $book)
     {
-        return view(
-            'books.show', 
-            ['book' => $book->load([
-                'reviews' => fn ($query) => $query->latest(),
-                ])
-            ]
-        );
+
+        $cacheKey = 'book:' . $book->id;
+
+        $book = cache()->remember($cacheKey, 3600, fn() => $book->locale_get_default([
+            'reviews' => fn ($query) => $query->latest()
+        ]));
+
+        return view('books.show', ['book' => $book]);
     }
     
 
