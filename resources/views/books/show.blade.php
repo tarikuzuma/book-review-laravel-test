@@ -28,6 +28,7 @@
             <div class="mb-2 flex items-center justify-between">
               <div class="font-semibold">
                 {{ $review->rating}}
+                <x-star-rating :rating="$review->rating" />
               </div>
               <div class="book-review-count">
                 {{ $review->created_at->format('M j, Y') }}</div>
