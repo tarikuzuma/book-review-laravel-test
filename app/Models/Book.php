@@ -16,11 +16,13 @@ class Book extends Model
         return $this->hasMany(Review::class);
     }
 
+    // Scope to search books by title
     public function scopeTitle(Builder $query, string $title): Builder
     {
         return $query->where('title', 'LIKE', '%' . $title . '%');
     }
 
+    // Scope to count reviews, with an optional date range
     public function scopeWithReviewsCount(Builder $query, $from = null, $to = null): Builder|QueryBuilder
     {
         return $query->withCount([
@@ -28,6 +30,7 @@ class Book extends Model
         ]);
     }
 
+    // Scope to get average rating, with an optional date range
     public function scopeWithAvgRating(Builder $query, $from = null, $to = null): Builder|QueryBuilder
     {
         return $query->withAvg([
@@ -35,23 +38,25 @@ class Book extends Model
         ], 'rating');
     }
 
+    // Scope to get popular books by review count, with an optional date range
     public function scopePopular(Builder $query, $from = null, $to = null): Builder|QueryBuilder
     {
-        return $query->withReviewsCount()
-            ->orderBy('reviews_count', 'desc');
+        return $query->withReviewsCount($from, $to)->orderBy('reviews_count', 'desc');
     }
 
+    // Scope to get highest-rated books by average rating, with an optional date range
     public function scopeHighestRated(Builder $query, $from = null, $to = null): Builder|QueryBuilder
     {
-        return $query->withAvgRating()
-            ->orderBy('reviews_avg_rating', 'desc');
+        return $query->withAvgRating($from, $to)->orderBy('reviews_avg_rating', 'desc');
     }
 
+    // Scope to filter books with a minimum number of reviews
     public function scopeMinReviews(Builder $query, int $minReviews): Builder|QueryBuilder
     {
-        return $query->where('reviews_count', '>=', $minReviews);
+        return $query->having('reviews_count', '>=', $minReviews);
     }
 
+    // Date range filter for reviews
     private function dateRangeFilter(Builder $query, $from = null, $to = null)
     {
         if ($from && !$to) {
@@ -63,6 +68,7 @@ class Book extends Model
         }
     }
 
+    // Predefined popular last month scope with minimum reviews
     public function scopePopularLastMonth(Builder $query): Builder|QueryBuilder
     {
         return $query->popular(now()->subMonth(), now())
@@ -70,6 +76,7 @@ class Book extends Model
             ->minReviews(2);
     }
 
+    // Predefined popular last 6 months scope with minimum reviews
     public function scopePopularLast6Months(Builder $query): Builder|QueryBuilder
     {
         return $query->popular(now()->subMonths(6), now())
@@ -77,6 +84,7 @@ class Book extends Model
             ->minReviews(5);
     }
 
+    // Predefined highest rated last month scope with minimum reviews
     public function scopeHighestRatedLastMonth(Builder $query): Builder|QueryBuilder
     {
         return $query->highestRated(now()->subMonth(), now())
@@ -84,6 +92,7 @@ class Book extends Model
             ->minReviews(2);
     }
 
+    // Predefined highest rated last 6 months scope with minimum reviews
     public function scopeHighestRatedLast6Months(Builder $query): Builder|QueryBuilder
     {
         return $query->highestRated(now()->subMonths(6), now())
@@ -91,13 +100,10 @@ class Book extends Model
             ->minReviews(5);
     }
 
+    // Clear cache on update or delete
     protected static function booted()
     {
-        static::updated(
-            fn(Book $book) => cache()->forget('book:' . $book->id)
-        );
-        static::deleted(
-            fn(Book $book) => cache()->forget('book:' . $book->id)
-        );
+        static::updated(fn(Book $book) => cache()->forget('book:' . $book->id));
+        static::deleted(fn(Book $book) => cache()->forget('book:' . $book->id));
     }
 }
