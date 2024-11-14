@@ -29,17 +29,13 @@ class BookController extends Controller
             default => $books->latest()->withAvgRating()->withReviewsCount()
         };
 
-        // $cacheKey = 'books.' . $filter . ':' . $title;
-
-        // $books = cache()->remember($cacheKey, 3600, function() use ($books) {
-        //     return $books->get();
-        // });
-
-        $books = $books->paginate(10);
+        $books = $books->paginate(10)->appends([
+            'title' => $title,
+            'filter' => $filter,
+        ]);
 
         return view('books.index', ['books' => $books]);
     }
-
 
     /**
      * Show the form for creating a new resource.
